@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Kegiatan Kelas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            primary: { 50: '#f0f5fa', 100: '#e0ebf5', 200: '#c2d6eb', 300: '#94b8d9', 400: '#5e92c0', 500: '#3d73a8', 600: '#2f5b8c', 700: '#274a73', 800: '#233f60', 900: '#1e3a5f', 950: '#14253d' },
+            accent: { 400: '#d4b84a', 500: '#c9a227', 600: '#a8841f' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(30, 58, 95, 0.15); }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white; }
+      .card-hover { box-shadow: none; border: 1px solid #e5e7eb; }
+    }
+    .print-only { display: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <!-- Header -->
+  <header class="bg-primary-900 text-white shadow-lg no-print">
+    <div class="max-w-6xl mx-auto px-4 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-accent-500 flex items-center justify-center font-bold text-primary-900 text-lg">LK</div>
+        <div>
+          <h1 class="text-xl font-semibold tracking-tight">Laporan Kegiatan Kelas</h1>
+          <p class="text-primary-200 text-sm">Dokumentasi profesional setiap aktivitas pembelajaran</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="exportData()" class="px-3 py-2 text-sm bg-primary-800 hover:bg-primary-700 rounded-lg transition">Export JSON</button>
+        <button onclick="window.print()" class="px-3 py-2 text-sm bg-accent-500 hover:bg-accent-400 text-primary-900 font-medium rounded-lg transition">Cetak</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 no-print">
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+        <p class="text-sm text-slate-500">Total Laporan</p>
+        <p class="text-2xl font-semibold text-primary-900" id="stat-total">0</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+        <p class="text-sm text-slate-500">Bulan Ini</p>
+        <p class="text-2xl font-semibold text-primary-900" id="stat-month">0</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+        <p class="text-sm text-slate-500">Kelas Aktif</p>
+        <p class="text-2xl font-semibold text-primary-900" id="stat-kelas">0</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+        <p class="text-sm text-slate-500">Selesai</p>
+        <p class="text-2xl font-semibold text-primary-900" id="stat-selesai">0</p>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+      <!-- Form -->
+      <div class="lg:col-span-1 no-print">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-6">
+          <h2 class="text-lg font-semibold text-primary-900 mb-1" id="form-title">Tambah Laporan Baru</h2>
+          <p class="text-sm text-slate-500 mb-5">Isi detail kegiatan dengan lengkap</p>
+          
+          <form id="report-form" class="space-y-4" onsubmit="saveReport(event)">
+            <input type="hidden" id="edit-id">
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Kegiatan *</label>
+              <input type="date" id="tanggal" required class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Nama Kegiatan *</label>
+              <input type="text" id="nama" required placeholder="Contoh: Praktikum Biologi - Mikroskop" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Kelas / Mata Pelajaran *</label>
+              <input type="text" id="kelas" required placeholder="Contoh: X IPA 2 / Biologi" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Jenis Kegiatan</label>
+              <select id="jenis" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm">
+                <option value="Pembelajaran">Pembelajaran</option>
+                <option value="Praktikum">Praktikum</option>
+                <option value="Diskusi">Diskusi / Presentasi</option>
+                <option value="Evaluasi">Evaluasi / Ujian</option>
+                <option value="Ekstrakurikuler">Ekstrakurikuler</option>
+                <option value="Kunjungan">Kunjungan / Field Trip</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Deskripsi Kegiatan *</label>
+              <textarea id="deskripsi" required rows="3" placeholder="Jelaskan alur kegiatan secara ringkas..." class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm resize-none"></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Hasil / Output</label>
+              <textarea id="hasil" rows="2" placeholder="Apa yang dicapai siswa? Produk, pemahaman, dll." class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm resize-none"></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Catatan / Dokumentasi</label>
+              <input type="text" id="catatan" placeholder="Link foto, file, atau catatan tambahan" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <select id="status" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm">
+                <option value="Selesai">Selesai</option>
+                <option value="Berlangsung">Berlangsung</option>
+                <option value="Direncanakan">Direncanakan</option>
+              </select>
+            </div>
+            
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-primary-900 hover:bg-primary-800 text-white font-medium py-2.5 rounded-lg transition text-sm">
+                Simpan Laporan
+              </button>
+              <button type="button" onclick="resetForm()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 rounded-lg transition text-sm text-slate-600">
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div class="lg:col-span-2">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 no-print">
+          <h2 class="text-lg font-semibold text-primary-900">Daftar Laporan</h2>
+          <div class="flex gap-2">
+            <input type="search" id="search" placeholder="Cari kegiatan / kelas..." oninput="renderList()" class="px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none w-full sm:w-48">
+            <select id="filter-status" onchange="renderList()" class="px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none">
+              <option value="">Semua Status</option>
+              <option value="Selesai">Selesai</option>
+              <option value="Berlangsung">Berlangsung</option>
+              <option value="Direncanakan">Direncanakan</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Print header -->
+        <div class="print-only mb-6">
+          <h1 class="text-2xl font-bold text-primary-900">Laporan Kegiatan Kelas</h1>
+          <p class="text-slate-600">Dicetak pada: <span id="print-date"></span></p>
+        </div>
+
+        <div id="list-container" class="space-y-4">
+          <!-- Cards will be injected here -->
+        </div>
+        
+        <div id="empty-state" class="hidden text-center py-16">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-50 flex items-center justify-center">
+            <svg class="w-8 h-8 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <p class="text-slate-500 font-medium">Belum ada laporan</p>
+          <p class="text-sm text-slate-400 mt-1">Mulai dengan menambahkan kegiatan pertama Anda</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 py-8 text-center text-sm text-slate-400 no-print">
+    <p>Laporan Kegiatan Kelas • Dibuat untuk dokumentasi profesional</p>
+  </footer>
+
+  <!-- Detail Modal -->
+  <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto fade-in">
+      <div class="p-6 border-b border-slate-100 flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium text-primary-600 uppercase tracking-wide" id="modal-jenis"></p>
+          <h3 class="text-xl font-semibold text-primary-900 mt-1" id="modal-nama"></h3>
+        </div>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-sm">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-slate-500">Tanggal</p>
+            <p class="font-medium" id="modal-tanggal"></p>
+          </div>
+          <div>
+            <p class="text-slate-500">Status</p>
+            <p class="font-medium" id="modal-status"></p>
+          </div>
+          <div class="col-span-2">
+            <p class="text-slate-500">Kelas / Mapel</p>
+            <p class="font-medium" id="modal-kelas"></p>
+          </div>
+        </div>
+        <div>
+          <p class="text-slate-500 mb-1">Deskripsi</p>
+          <p class="text-slate-700 leading-relaxed" id="modal-deskripsi"></p>
+        </div>
+        <div>
+          <p class="text-slate-500 mb-1">Hasil / Output</p>
+          <p class="text-slate-700 leading-relaxed" id="modal-hasil"></p>
+        </div>
+        <div>
+          <p class="text-slate-500 mb-1">Catatan</p>
+          <p class="text-slate-700" id="modal-catatan"></p>
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-100 flex justify-end gap-2">
+        <button onclick="editFromModal()" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Edit</button>
+        <button onclick="closeModal()" class="px-4 py-2 text-sm bg-primary-900 text-white rounded-lg hover:bg-primary-800">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'laporan_kegiatan_kelas_v1';
+    let reports = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let currentModalId = null;
+
+    // Seed sample data if empty
+    if (reports.length === 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      reports = [
+        {
+          id: crypto.randomUUID(),
+          tanggal: today,
+          nama: 'Pengenalan Mikroskop & Pengamatan Sel',
+          kelas: 'X IPA 1 / Biologi',
+          jenis: 'Praktikum',
+          deskripsi: 'Siswa belajar menggunakan mikroskop cahaya, menyiapkan preparat bawang bombay, dan mengamati struktur sel epidermis.',
+          hasil: 'Semua siswa berhasil membuat preparat dan menggambar hasil pengamatan. 90% siswa dapat menyebutkan bagian-bagian sel dengan benar.',
+          catatan: 'Dokumentasi foto tersimpan di Drive kelas',
+          status: 'Selesai',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: crypto.randomUUID(),
+          tanggal: new Date(Date.now() - 86400000 * 3).toISOString().slice(0, 10),
+          nama: 'Diskusi Kelompok: Revolusi Industri 4.0',
+          kelas: 'XI IPS 2 / Sejarah',
+          jenis: 'Diskusi',
+          deskripsi: 'Siswa dibagi menjadi 5 kelompok untuk mendiskusikan dampak Revolusi Industri 4.0 terhadap dunia kerja dan pendidikan di Indonesia.',
+          hasil: 'Setiap kelompok mempresentasikan kesimpulan. Muncul ide-ide kreatif untuk adaptasi kurikulum.',
+          catatan: '',
+          status: 'Selesai',
+          createdAt: new Date().toISOString()
+        }
+      ];
+      saveToStorage();
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+      updateStats();
+      renderList();
+    }
+
+    function updateStats() {
+      document.getElementById('stat-total').textContent = reports.length;
+      const now = new Date();
+      const thisMonth = reports.filter(r => {
+        const d = new Date(r.tanggal);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }).length;
+      document.getElementById('stat-month').textContent = thisMonth;
+      const kelasSet = new Set(reports.map(r => r.kelas));
+      document.getElementById('stat-kelas').textContent = kelasSet.size;
+      document.getElementById('stat-selesai').textContent = reports.filter(r => r.status === 'Selesai').length;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function statusBadge(status) {
+      const styles = {
+        'Selesai': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        'Berlangsung': 'bg-amber-50 text-amber-700 border-amber-200',
+        'Direncanakan': 'bg-sky-50 text-sky-700 border-sky-200'
+      };
+      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || 'bg-slate-50 text-slate-600'}">${status}</span>`;
+    }
+
+    function renderList() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const filterStatus = document.getElementById('filter-status').value;
+      
+      let filtered = reports
+        .filter(r => {
+          const matchSearch = !search || 
+            r.nama.toLowerCase().includes(search) || 
+            r.kelas.toLowerCase().includes(search) ||
+            r.deskripsi.toLowerCase().includes(search);
+          const matchStatus = !filterStatus || r.status === filterStatus;
+          return matchSearch && matchStatus;
+        })
+        .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+
+      const container = document.getElementById('list-container');
+      const empty = document.getElementById('empty-state');
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      container.innerHTML = filtered.map(r => `
+        <article class="bg-white rounded-xl border border-slate-200 p-5 card-hover cursor-pointer fade-in" onclick="openModal('${r.id}')">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded">${r.jenis}</span>
+                ${statusBadge(r.status)}
+              </div>
+              <h3 class="font-semibold text-primary-900 text-base leading-snug">${escapeHtml(r.nama)}</h3>
+              <p class="text-sm text-slate-500 mt-1">${escapeHtml(r.kelas)}</p>
+            </div>
+            <div class="text-right shrink-0">
+              <p class="text-sm font-medium text-slate-700">${formatDate(r.tanggal)}</p>
+            </div>
+          </div>
+          <p class="text-sm text-slate-600 mt-3 line-clamp-2 leading-relaxed">${escapeHtml(r.deskripsi)}</p>
+          <div class="mt-4 flex gap-2 no-print" onclick="event.stopPropagation()">
+            <button onclick="editReport('${r.id}')" class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600">Edit</button>
+            <button onclick="deleteReport('${r.id}')" class="text-xs px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-50 text-red-600">Hapus</button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function saveReport(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const data = {
+        tanggal: document.getElementById('tanggal').value,
+        nama: document.getElementById('nama').value.trim(),
+        kelas: document.getElementById('kelas').value.trim(),
+        jenis: document.getElementById('jenis').value,
+        deskripsi: document.getElementById('deskripsi').value.trim(),
+        hasil: document.getElementById('hasil').value.trim(),
+        catatan: document.getElementById('catatan').value.trim(),
+        status: document.getElementById('status').value,
+      };
+
+      if (id) {
+        const idx = reports.findIndex(r => r.id === id);
+        if (idx !== -1) {
+          reports[idx] = { ...reports[idx], ...data };
+        }
+      } else {
+        reports.push({
+          id: crypto.randomUUID(),
+          ...data,
+          createdAt: new Date().toISOString()
+        });
+      }
+      saveToStorage();
+      resetForm();
+    }
+
+    function resetForm() {
+      document.getElementById('report-form').reset();
+      document.getElementById('edit-id').value = '';
+      document.getElementById('form-title').textContent = 'Tambah Laporan Baru';
+      document.getElementById('tanggal').value = new Date().toISOString().slice(0, 10);
+    }
+
+    function editReport(id) {
+      const r = reports.find(x => x.id === id);
+      if (!r) return;
+      document.getElementById('edit-id').value = r.id;
+      document.getElementById('tanggal').value = r.tanggal;
+      document.getElementById('nama').value = r.nama;
+      document.getElementById('kelas').value = r.kelas;
+      document.getElementById('jenis').value = r.jenis;
+      document.getElementById('deskripsi').value = r.deskripsi;
+      document.getElementById('hasil').value = r.hasil || '';
+      document.getElementById('catatan').value = r.catatan || '';
+      document.getElementById('status').value = r.status;
+      document.getElementById('form-title').textContent = 'Edit Laporan';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteReport(id) {
+      if (!confirm('Yakin ingin menghapus laporan ini?')) return;
+      reports = reports.filter(r => r.id !== id);
+      saveToStorage();
+    }
+
+    function openModal(id) {
+      const r = reports.find(x => x.id === id);
+      if (!r) return;
+      currentModalId = id;
+      document.getElementById('modal-jenis').textContent = r.jenis;
+      document.getElementById('modal-nama').textContent = r.nama;
+      document.getElementById('modal-tanggal').textContent = formatDate(r.tanggal);
+      document.getElementById('modal-status').innerHTML = statusBadge(r.status);
+      document.getElementById('modal-kelas').textContent = r.kelas;
+      document.getElementById('modal-deskripsi').textContent = r.deskripsi || '-';
+      document.getElementById('modal-hasil').textContent = r.hasil || '-';
+      document.getElementById('modal-catatan').textContent = r.catatan || '-';
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('modal').classList.add('flex');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+      document.getElementById('modal').classList.remove('flex');
+      currentModalId = null;
+    }
+
+    function editFromModal() {
+      if (currentModalId) {
+        closeModal();
+        editReport(currentModalId);
+      }
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(reports, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `laporan-kegiatan-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Close modal on backdrop
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
+
+    // Init
+    document.getElementById('tanggal').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('print-date').textContent = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
+    updateStats();
+    renderList();
+  </script>
+</body>
+</html>
